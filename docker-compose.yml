@@ -1,0 +1,51 @@
+# To execute this docker-compose yml file use `docker-compose -f docker-compose-v3.yml up`
+# Add the `-d` flag at the end for detached execution
+# Change "SE_NODE_GRID_URL=http://localhost:4444" to the URL/IP where the Grid is accesible.
+# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose-v3.yml down`
+version: "3"
+services:
+  chrome:
+    image: selenium/node-chrome:${SELENIUM_VERSION}
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub-master
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub-master
+      - SE_EVENT_BUS_PORT=4444
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_GRID_URL=http://localhost:4444
+    ports:
+      - "5900"
+
+  firefox:
+    image: selenium/node-firefox:${SELENIUM_VERSION}
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub-master
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub-master
+      - SE_EVENT_BUS_PORT=4444
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_GRID_URL=http://localhost:4444
+    ports:
+      - "5556:5555"
+    healthcheck:
+      test: ["CMD", "/opt/bin/check-grid.sh", "--host", "0.0.0.0", "--port", "5555"]
+      interval: 15s
+      timeout: 15s
+      retries: 3
+      start_period: 30s 
+
+  selenium-hub-master:
+    image: selenium/hub:${SELENIUM_VERSION}
+    container_name: selenium-hub-master
+    ports:
+      - "4444:4444"
+    healthcheck:
+      test: ["CMD", "/opt/bin/check-grid.sh", "--host", "0.0.0.0", "--port", "4444"]
+      interval: 15s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
